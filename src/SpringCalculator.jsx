@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Download, Info, Calculator } from 'lucide-react';
+import { Download, Info, Calculator, Settings } from 'lucide-react';
 
 // Material properties
 const MATERIALS = {
@@ -23,6 +23,9 @@ const InfoTooltip = ({ text }) => (
   </div>
 );
 
+// Add quantity analysis points
+const QUANTITY_POINTS = [10, 50, 500, 1000, 5000, 10000, 20000, 50000, 100000, 200000];
+
 const SpringCalculator = () => {
   // Input state
   const [inputs, setInputs] = useState({
@@ -41,7 +44,9 @@ const SpringCalculator = () => {
     overrideMargin: false,
     manualPrice: 0,
     overrideRate: false,
-    manualRate: 0
+    manualRate: 0,
+    setupCost: 5000, // Default setup cost
+    quantity: 1000, // Default quantity
   });
 
   // Calculation results
@@ -52,11 +57,16 @@ const SpringCalculator = () => {
     rawMaterialCost: 0,
     springRate: 0,
     loadAtL1: 0,
-    sellingPrice: 0
+    sellingPrice: 0,
+    pricePerSpring: 0,
+    overallSellingPrice: 0
   });
   
   // Graph data
   const [graphData, setGraphData] = useState([]);
+  
+  // Quantity analysis data
+  const [quantityAnalysisData, setQuantityAnalysisData] = useState([]);
   
   // Validation state
   const [validationErrors, setValidationErrors] = useState({});
@@ -116,7 +126,7 @@ const SpringCalculator = () => {
     if (!validateInputs()) return;
     
     const { wireD, coilsTotal, coilsActive, freeLength, loadHeight, density, G, materialCost, marginRatio,
-            overrideMargin, manualPrice, overrideRate, manualRate } = inputs;
+            overrideMargin, manualPrice, overrideRate, manualRate, setupCost, quantity } = inputs;
     
     // Calculate mean diameter
     const meanD = calculateMeanDiameter();
@@ -147,13 +157,16 @@ const SpringCalculator = () => {
     const deflection = freeLength - loadHeight;
     const loadAtL1 = springRate * deflection;
     
-    // Selling price
-    let sellingPrice;
+    // Calculate price per spring
+    let pricePerSpring;
     if (overrideMargin) {
-      sellingPrice = manualPrice;
+      pricePerSpring = manualPrice;
     } else {
-      sellingPrice = rawMaterialCost / marginRatio;
+      pricePerSpring = rawMaterialCost / marginRatio;
     }
+    
+    // Calculate overall selling price
+    const overallSellingPrice = (setupCost + (pricePerSpring * quantity)) / quantity;
     
     // Update results
     setResults({
@@ -163,7 +176,9 @@ const SpringCalculator = () => {
       rawMaterialCost,
       springRate,
       loadAtL1,
-      sellingPrice
+      sellingPrice: pricePerSpring,
+      pricePerSpring,
+      overallSellingPrice
     });
     
     // Generate graph data for load vs deflection
@@ -176,6 +191,13 @@ const SpringCalculator = () => {
       });
     }
     setGraphData(graphPoints);
+
+    // Generate quantity analysis data
+    const quantityPoints = QUANTITY_POINTS.map(qty => ({
+      quantity: qty,
+      price: (setupCost + (pricePerSpring * qty)) / qty
+    }));
+    setQuantityAnalysisData(quantityPoints);
   };
   
   // Re-calculate when inputs change
@@ -185,7 +207,7 @@ const SpringCalculator = () => {
   
   // Download results as CSV
   const downloadResults = () => {
-    const { meanD, wireVolume, springWeight, rawMaterialCost, springRate, loadAtL1, sellingPrice } = results;
+    const { meanD, wireVolume, springWeight, rawMaterialCost, springRate, loadAtL1, sellingPrice, pricePerSpring, overallSellingPrice } = results;
     const csvContent = `Parameter,Value,Unit
 Wire Diameter,${inputs.wireD},mm
 Diameter (${inputs.diameterType}),${inputs.diameter},mm
@@ -204,6 +226,8 @@ Raw Material Cost,${rawMaterialCost.toFixed(2)},₹
 Spring Rate,${springRate.toFixed(2)},N/mm
 Load at L1,${loadAtL1.toFixed(2)},N
 Selling Price,${sellingPrice.toFixed(2)},₹
+Price per Spring,${pricePerSpring.toFixed(2)},₹
+Overall Selling Price,${overallSellingPrice.toFixed(2)},₹
 `;
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -550,6 +574,50 @@ Selling Price,${sellingPrice.toFixed(2)},₹
                   </div>
                 </div>
 
+                {/* Add Production Settings Section */}
+                <div className="p-6 border-t border-gray-200">
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                        Production Settings
+                        <InfoTooltip text="Configure production parameters" />
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Setup Cost */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Setup Cost (₹)
+                            <InfoTooltip text="Initial setup cost for production" />
+                          </label>
+                          <input
+                            type="number"
+                            name="setupCost"
+                            value={inputs.setupCost}
+                            onChange={handleInputChange}
+                            className="block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                          />
+                        </div>
+
+                        {/* Production Quantity */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Production Quantity
+                            <InfoTooltip text="Number of springs to be produced" />
+                          </label>
+                          <input
+                            type="number"
+                            name="quantity"
+                            value={inputs.quantity}
+                            onChange={handleInputChange}
+                            className="block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Calculate Button */}
                 <button
                   onClick={calculateResults}
@@ -614,8 +682,13 @@ Selling Price,${sellingPrice.toFixed(2)},₹
                   </div>
 
                   <div className="col-span-2 bg-blue-50 rounded-lg p-4">
-                    <p className="text-sm font-medium text-blue-600">Selling Price</p>
-                    <p className="text-3xl font-bold text-blue-900">₹{results.sellingPrice.toFixed(2)}</p>
+                    <p className="text-sm font-medium text-blue-600">Price per Spring</p>
+                    <p className="text-2xl font-bold text-blue-900">₹{results.pricePerSpring.toFixed(2)}</p>
+                  </div>
+
+                  <div className="col-span-2 bg-green-50 rounded-lg p-4">
+                    <p className="text-sm font-medium text-green-600">Overall Selling Price</p>
+                    <p className="text-3xl font-bold text-green-900">₹{results.overallSellingPrice.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
@@ -658,6 +731,54 @@ Selling Price,${sellingPrice.toFixed(2)},₹
                         stroke="#6366F1"
                         name="Spring Load"
                         dot={false}
+                        strokeWidth={3}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* Price vs Quantity Analysis Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4">
+                <h2 className="text-xl font-semibold text-white flex items-center">
+                  Price vs Quantity Analysis
+                  <InfoTooltip text="How the overall selling price changes with production quantity" />
+                </h2>
+              </div>
+
+              <div className="p-6">
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={quantityAnalysisData}
+                      margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                      <XAxis
+                        dataKey="quantity"
+                        label={{ value: 'Production Quantity', position: 'insideBottom', offset: -5 }}
+                        stroke="#6B7280"
+                        type="number"
+                        scale="log"
+                        domain={['dataMin', 'dataMax']}
+                      />
+                      <YAxis
+                        label={{ value: 'Price per Spring (₹)', angle: -90, position: 'insideLeft' }}
+                        stroke="#6B7280"
+                      />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#FFF', borderRadius: '0.5rem', border: '1px solid #E5E7EB' }}
+                        formatter={(value) => [`₹${value.toFixed(2)}`, 'Price']}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="price"
+                        stroke="#F97316"
+                        name="Price per Spring"
+                        dot={true}
                         strokeWidth={3}
                       />
                     </LineChart>
