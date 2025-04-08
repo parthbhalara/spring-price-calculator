@@ -59,7 +59,8 @@ const SpringCalculator = () => {
     loadAtL1: 0,
     sellingPrice: 0,
     pricePerSpring: 0,
-    overallSellingPrice: 0
+    overallSellingPrice: 0,
+    totalWireWeight: 0
   });
   
   // Graph data
@@ -168,6 +169,9 @@ const SpringCalculator = () => {
     // Calculate overall selling price
     const overallSellingPrice = (setupCost + (pricePerSpring * quantity)) / quantity;
     
+    // Calculate total wire weight for production quantity
+    const totalWireWeight = (springWeight * quantity) / 1000; // Convert to kg
+    
     // Update results
     setResults({
       meanD,
@@ -178,7 +182,8 @@ const SpringCalculator = () => {
       loadAtL1,
       sellingPrice: pricePerSpring,
       pricePerSpring,
-      overallSellingPrice
+      overallSellingPrice,
+      totalWireWeight
     });
     
     // Generate graph data for load vs deflection
@@ -207,7 +212,7 @@ const SpringCalculator = () => {
   
   // Download results as CSV
   const downloadResults = () => {
-    const { meanD, wireVolume, springWeight, rawMaterialCost, springRate, loadAtL1, sellingPrice, pricePerSpring, overallSellingPrice } = results;
+    const { meanD, wireVolume, springWeight, rawMaterialCost, springRate, loadAtL1, sellingPrice, pricePerSpring, overallSellingPrice, totalWireWeight } = results;
     const csvContent = `Parameter,Value,Unit
 Wire Diameter,${inputs.wireD},mm
 Diameter (${inputs.diameterType}),${inputs.diameter},mm
@@ -228,6 +233,7 @@ Load at L1,${loadAtL1.toFixed(2)},N
 Selling Price,${sellingPrice.toFixed(2)},₹
 Price per Spring,${pricePerSpring.toFixed(2)},₹
 Overall Selling Price,${overallSellingPrice.toFixed(2)},₹
+Total Wire Weight,${totalWireWeight.toFixed(2)},kg
 `;
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -689,6 +695,12 @@ Overall Selling Price,${overallSellingPrice.toFixed(2)},₹
                   <div className="col-span-2 bg-green-50 rounded-lg p-4">
                     <p className="text-sm font-medium text-green-600">Overall Selling Price</p>
                     <p className="text-3xl font-bold text-green-900">₹{results.overallSellingPrice.toFixed(2)}</p>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-sm font-medium text-gray-500">Total Wire Weight</p>
+                    <p className="text-2xl font-bold text-gray-900">{results.totalWireWeight.toFixed(2)} <span className="text-sm font-normal text-gray-500">kg</span></p>
+                    <p className="text-xs text-gray-500 mt-1">For {inputs.quantity.toLocaleString()} springs</p>
                   </div>
                 </div>
               </div>
