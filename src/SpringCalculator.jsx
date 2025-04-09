@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Download, Info, Calculator, Settings } from 'lucide-react';
+import { Download, Info, Calculator } from 'lucide-react';
 
 // Material properties
 const MATERIALS = {
@@ -47,11 +47,20 @@ const SpringCalculator = () => {
     manualRate: 0,
     setupCost: 5000, // Default setup cost
     quantity: 1000, // Default quantity
+    wireDTolerance: 0.02,
+    odTolerance: 0.5,
+    flTolerance: 1,
+    coilDirection: '',
+    finish: '',
+    ends: '',
+    otherNotes: '',
   });
 
   // Calculation results
   const [results, setResults] = useState({
     meanD: 0,
+    od: 0,
+    id: 0,
     wireVolume: 0,
     springWeight: 0,
     rawMaterialCost: 0,
@@ -132,6 +141,10 @@ const SpringCalculator = () => {
     // Calculate mean diameter
     const meanD = calculateMeanDiameter();
     
+    // Calculate outer and inner diameters
+    const od = meanD + wireD;
+    const id = meanD - wireD;
+    
     // Spring index
     const C = meanD / wireD;
     
@@ -175,6 +188,8 @@ const SpringCalculator = () => {
     // Update results
     setResults({
       meanD,
+      od,
+      id,
       wireVolume,
       springWeight,
       rawMaterialCost,
@@ -208,7 +223,7 @@ const SpringCalculator = () => {
   // Re-calculate when inputs change
   useEffect(() => {
     calculateResults();
-  }, [inputs]);
+  }, [inputs]); // eslint-disable-line react-hooks/exhaustive-deps
   
   // Download results as CSV
   const downloadResults = () => {
@@ -274,24 +289,40 @@ Total Wire Weight,${totalWireWeight.toFixed(2)},kg
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Wire Diameter Input */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Wire Diameter (mm)
-                        <InfoTooltip text="The thickness of the wire used to make the spring" />
-                      </label>
-                      <input
-                        type="number"
-                        name="wireD"
-                        value={inputs.wireD}
-                        onChange={handleInputChange}
-                        className={`block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          validationErrors.wireD ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                        }`}
-                      />
-                      {validationErrors.wireD && (
-                        <p className="mt-1 text-sm text-red-600">{validationErrors.wireD}</p>
-                      )}
+                    {/* Wire Diameter Input with Tolerance */}
+                    <div className="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Wire Diameter (mm)
+                          <InfoTooltip text="The thickness of the wire used to make the spring" />
+                        </label>
+                        <input
+                          type="number"
+                          name="wireD"
+                          value={inputs.wireD}
+                          onChange={handleInputChange}
+                          className={`block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            validationErrors.wireD ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                          }`}
+                        />
+                        {validationErrors.wireD && (
+                          <p className="mt-1 text-sm text-red-600">{validationErrors.wireD}</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Wire Diameter Tolerance (±mm)
+                          <InfoTooltip text="Allowable variation in wire diameter" />
+                        </label>
+                        <input
+                          type="number"
+                          name="wireDTolerance"
+                          step="0.01"
+                          value={inputs.wireDTolerance}
+                          onChange={handleInputChange}
+                          className="block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                        />
+                      </div>
                     </div>
 
                     {/* Diameter Type */}
@@ -312,24 +343,75 @@ Total Wire Weight,${totalWireWeight.toFixed(2)},kg
                       </select>
                     </div>
 
-                    {/* Diameter Input */}
+                    {/* Diameter Input with Tolerance */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         {inputs.diameterType === 'outer' ? 'Outer' : inputs.diameterType === 'inner' ? 'Inner' : 'Mean'} Diameter (mm)
                         <InfoTooltip text={`The ${inputs.diameterType} diameter of the spring`} />
                       </label>
-                      <input
-                        type="number"
-                        name="diameter"
-                        value={inputs.diameter}
-                        onChange={handleInputChange}
-                        className={`block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          validationErrors.diameter ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                        }`}
-                      />
+                      <div className="flex space-x-2">
+                        <input
+                          type="number"
+                          name="diameter"
+                          value={inputs.diameter}
+                          onChange={handleInputChange}
+                          className={`block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            validationErrors.diameter ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                          }`}
+                        />
+                        {inputs.diameterType === 'outer' && (
+                          <div className="w-1/2">
+                            <input
+                              type="number"
+                              name="odTolerance"
+                              step="0.1"
+                              value={inputs.odTolerance}
+                              onChange={handleInputChange}
+                              placeholder="±mm"
+                              className="block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                            />
+                          </div>
+                        )}
+                      </div>
                       {validationErrors.diameter && (
                         <p className="mt-1 text-sm text-red-600">{validationErrors.diameter}</p>
                       )}
+                    </div>
+
+                    {/* Free Length with Tolerance */}
+                    <div className="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Free Length (mm)
+                          <InfoTooltip text="Uncompressed length of the spring" />
+                        </label>
+                        <input
+                          type="number"
+                          name="freeLength"
+                          value={inputs.freeLength}
+                          onChange={handleInputChange}
+                          className={`block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            validationErrors.freeLength ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                          }`}
+                        />
+                        {validationErrors.freeLength && (
+                          <p className="mt-1 text-sm text-red-600">{validationErrors.freeLength}</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Free Length Tolerance (±mm)
+                          <InfoTooltip text="Allowable variation in free length" />
+                        </label>
+                        <input
+                          type="number"
+                          name="flTolerance"
+                          step="0.1"
+                          value={inputs.flTolerance}
+                          onChange={handleInputChange}
+                          className="block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                        />
+                      </div>
                     </div>
 
                     {/* Total Coils */}
@@ -369,26 +451,6 @@ Total Wire Weight,${totalWireWeight.toFixed(2)},kg
                       />
                       {validationErrors.coilsActive && (
                         <p className="mt-1 text-sm text-red-600">{validationErrors.coilsActive}</p>
-                      )}
-                    </div>
-
-                    {/* Free Length */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Free Length (mm)
-                        <InfoTooltip text="Uncompressed length of the spring" />
-                      </label>
-                      <input
-                        type="number"
-                        name="freeLength"
-                        value={inputs.freeLength}
-                        onChange={handleInputChange}
-                        className={`block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          validationErrors.freeLength ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                        }`}
-                      />
-                      {validationErrors.freeLength && (
-                        <p className="mt-1 text-sm text-red-600">{validationErrors.freeLength}</p>
                       )}
                     </div>
 
@@ -795,6 +857,200 @@ Total Wire Weight,${totalWireWeight.toFixed(2)},kg
                       />
                     </LineChart>
                   </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* Specifications Summary Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-6">
+              <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 px-6 py-4">
+                <h2 className="text-xl font-semibold text-white flex items-center">
+                  Specifications Summary
+                  <InfoTooltip text="Complete spring specifications and pricing summary" />
+                </h2>
+              </div>
+
+              <div className="p-6">
+                <div className="space-y-6">
+                  {/* Technical Specifications */}
+                  <div className="bg-gray-50 rounded-lg p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Technical Specifications</h3>
+                    <div className="space-y-2 font-mono text-sm">
+                      <div className="flex justify-between border-b border-gray-200 py-2">
+                        <span className="text-gray-600">Spring Wire Diameter:</span>
+                        <span className="text-gray-900">{inputs.wireD} ± {inputs.wireDTolerance} mm</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-200 py-2">
+                        <span className="text-gray-600">Spring Outer Diameter:</span>
+                        <span className="text-gray-900">{results.od} ± {inputs.odTolerance} mm</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-200 py-2">
+                        <span className="text-gray-600">Spring Inner Diameter:</span>
+                        <span className="text-gray-900">{results.id} mm</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-200 py-2">
+                        <span className="text-gray-600">Spring Mean Diameter:</span>
+                        <span className="text-gray-900">{results.meanD} mm</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-200 py-2">
+                        <span className="text-gray-600">Total Coils:</span>
+                        <span className="text-gray-900">{inputs.coilsTotal}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-200 py-2">
+                        <span className="text-gray-600">Active Coils:</span>
+                        <span className="text-gray-900">{inputs.coilsActive}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-200 py-2">
+                        <span className="text-gray-600">Material:</span>
+                        <span className="text-gray-900">{inputs.material}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-200 py-2">
+                        <span className="text-gray-600">Coil Direction:</span>
+                        <span className="text-gray-900">{inputs.coilDirection || "Not specified"}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-200 py-2">
+                        <span className="text-gray-600">Finish:</span>
+                        <span className="text-gray-900">{inputs.finish || "Not specified"}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-gray-200 py-2">
+                        <span className="text-gray-600">Ends:</span>
+                        <span className="text-gray-900">{inputs.ends || "Not specified"}</span>
+                      </div>
+                      {inputs.otherNotes && (
+                        <div className="flex justify-between border-b border-gray-200 py-2">
+                          <span className="text-gray-600">Additional Notes:</span>
+                          <span className="text-gray-900">{inputs.otherNotes}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Price Analysis Table */}
+                  <div className="bg-gray-50 rounded-lg p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Price Analysis</h3>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price per Spring</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Price</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 bg-white">
+                          <tr>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">10</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₹{((inputs.setupCost + (results.pricePerSpring * 10)) / 10).toFixed(2)}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₹{(inputs.setupCost + (results.pricePerSpring * 10)).toFixed(2)}</td>
+                          </tr>
+                          <tr className="bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{inputs.quantity.toLocaleString()}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₹{results.overallSellingPrice.toFixed(2)}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₹{(inputs.setupCost + (results.pricePerSpring * inputs.quantity)).toFixed(2)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Copy Button */}
+                  <button
+                    onClick={() => {
+                      const specifications = `Spring Specifications:
+Wire Diameter: ${inputs.wireD} ± ${inputs.wireDTolerance} mm
+Outer Diameter: ${results.od} ± ${inputs.odTolerance} mm
+Inner Diameter: ${results.id} mm
+Mean Diameter: ${results.meanD} mm
+Total Coils: ${inputs.coilsTotal}
+Active Coils: ${inputs.coilsActive}
+Material: ${inputs.material}
+Coil Direction: ${inputs.coilDirection || "Not specified"}
+Finish: ${inputs.finish || "Not specified"}
+Ends: ${inputs.ends || "Not specified"}
+${inputs.otherNotes ? `Additional Notes: ${inputs.otherNotes}` : ""}
+
+Price Analysis:
+10 Springs: ₹${((inputs.setupCost + (results.pricePerSpring * 10)) / 10).toFixed(2)} per spring (Total: ₹${(inputs.setupCost + (results.pricePerSpring * 10)).toFixed(2)})
+${inputs.quantity} Springs: ₹${results.overallSellingPrice.toFixed(2)} per spring (Total: ₹${(inputs.setupCost + (results.pricePerSpring * inputs.quantity)).toFixed(2)})`;
+                      
+                      navigator.clipboard.writeText(specifications);
+                      // You might want to add a toast notification here
+                    }}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                  >
+                    <span>Copy All Specifications</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Remove the separate Tolerances section and keep only the Additional Specifications */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Additional Specifications</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Coil Direction
+                </label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    name="coilDirection"
+                    value={inputs.coilDirection}
+                    onChange={handleInputChange}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="e.g., Right Hand"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Finish
+                </label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    name="finish"
+                    value={inputs.finish}
+                    onChange={handleInputChange}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="e.g., Plain, Zinc Plated"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Ends
+                </label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    name="ends"
+                    value={inputs.ends}
+                    onChange={handleInputChange}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="e.g., Closed and Ground"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Other Notes
+                </label>
+                <div className="mt-1">
+                  <textarea
+                    name="otherNotes"
+                    value={inputs.otherNotes}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="Any additional specifications or notes"
+                  />
                 </div>
               </div>
             </div>
