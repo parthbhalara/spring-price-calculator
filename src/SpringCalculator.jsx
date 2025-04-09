@@ -37,6 +37,7 @@ const SpringCalculator = () => {
     freeLength: 50,
     loadHeight: 40,
     material: 'Steel ASTM A228',
+    customMaterialName: '',
     materialCost: MATERIALS['Steel ASTM A228'].cost,
     density: MATERIALS['Steel ASTM A228'].density,
     G: MATERIALS['Steel ASTM A228'].G,
@@ -488,7 +489,7 @@ Total Wire Weight,${totalWireWeight.toFixed(2)},kg
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Material
-                        <InfoTooltip text="Select the spring material" />
+                        <InfoTooltip text="Select the spring material or choose Custom to enter your own" />
                       </label>
                       <select
                         name="material"
@@ -502,6 +503,24 @@ Total Wire Weight,${totalWireWeight.toFixed(2)},kg
                       </select>
                     </div>
 
+                    {/* Custom Material Name - Only show when Custom is selected */}
+                    {inputs.material === 'Custom' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Custom Material Name
+                          <InfoTooltip text="Enter the name of your custom material" />
+                        </label>
+                        <input
+                          type="text"
+                          name="customMaterialName"
+                          value={inputs.customMaterialName}
+                          onChange={handleInputChange}
+                          placeholder="Enter material name"
+                          className="block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                        />
+                      </div>
+                    )}
+
                     {/* Material Cost */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -513,7 +532,10 @@ Total Wire Weight,${totalWireWeight.toFixed(2)},kg
                         name="materialCost"
                         value={inputs.materialCost}
                         onChange={handleInputChange}
-                        className="block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                        className={`block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300 ${
+                          inputs.material !== 'Custom' ? 'bg-gray-50' : ''
+                        }`}
+                        readOnly={inputs.material !== 'Custom'}
                       />
                     </div>
 
@@ -528,7 +550,10 @@ Total Wire Weight,${totalWireWeight.toFixed(2)},kg
                         name="density"
                         value={inputs.density}
                         onChange={handleInputChange}
-                        className="block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                        className={`block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300 ${
+                          inputs.material !== 'Custom' ? 'bg-gray-50' : ''
+                        }`}
+                        readOnly={inputs.material !== 'Custom'}
                       />
                     </div>
 
@@ -543,7 +568,80 @@ Total Wire Weight,${totalWireWeight.toFixed(2)},kg
                         name="G"
                         value={inputs.G}
                         onChange={handleInputChange}
+                        className={`block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300 ${
+                          inputs.material !== 'Custom' ? 'bg-gray-50' : ''
+                        }`}
+                        readOnly={inputs.material !== 'Custom'}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Add Additional Specifications section after Material Properties */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                    Additional Specifications
+                    <InfoTooltip text="Specify additional spring characteristics" />
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Coil Direction
+                        <InfoTooltip text="Direction of coil winding (e.g., Right Hand, Left Hand)" />
+                      </label>
+                      <input
+                        type="text"
+                        name="coilDirection"
+                        value={inputs.coilDirection}
+                        onChange={handleInputChange}
                         className="block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                        placeholder="e.g., Right Hand"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Finish
+                        <InfoTooltip text="Surface treatment or coating specification" />
+                      </label>
+                      <input
+                        type="text"
+                        name="finish"
+                        value={inputs.finish}
+                        onChange={handleInputChange}
+                        className="block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                        placeholder="e.g., Plain, Zinc Plated"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ends
+                        <InfoTooltip text="End condition specification" />
+                      </label>
+                      <input
+                        type="text"
+                        name="ends"
+                        value={inputs.ends}
+                        onChange={handleInputChange}
+                        className="block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                        placeholder="e.g., Closed and Ground"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Other Notes
+                        <InfoTooltip text="Any additional specifications or requirements" />
+                      </label>
+                      <textarea
+                        name="otherNotes"
+                        value={inputs.otherNotes}
+                        onChange={handleInputChange}
+                        rows={3}
+                        className="block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                        placeholder="Any additional specifications or notes"
                       />
                     </div>
                   </div>
@@ -902,7 +1000,11 @@ Total Wire Weight,${totalWireWeight.toFixed(2)},kg
                       </div>
                       <div className="flex justify-between border-b border-gray-200 py-2">
                         <span className="text-gray-600">Material:</span>
-                        <span className="text-gray-900">{inputs.material}</span>
+                        <span className="text-gray-900">
+                          {inputs.material === 'Custom' ? 
+                            (inputs.customMaterialName || 'Custom Material') : 
+                            inputs.material}
+                        </span>
                       </div>
                       <div className="flex justify-between border-b border-gray-200 py-2">
                         <span className="text-gray-600">Coil Direction:</span>
@@ -980,77 +1082,6 @@ ${inputs.quantity} Springs: ₹${results.overallSellingPrice.toFixed(2)} per spr
                   >
                     <span>Copy All Specifications</span>
                   </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Remove the separate Tolerances section and keep only the Additional Specifications */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Additional Specifications</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Coil Direction
-                </label>
-                <div className="mt-1">
-                  <input
-                    type="text"
-                    name="coilDirection"
-                    value={inputs.coilDirection}
-                    onChange={handleInputChange}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="e.g., Right Hand"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Finish
-                </label>
-                <div className="mt-1">
-                  <input
-                    type="text"
-                    name="finish"
-                    value={inputs.finish}
-                    onChange={handleInputChange}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="e.g., Plain, Zinc Plated"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Ends
-                </label>
-                <div className="mt-1">
-                  <input
-                    type="text"
-                    name="ends"
-                    value={inputs.ends}
-                    onChange={handleInputChange}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="e.g., Closed and Ground"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Other Notes
-                </label>
-                <div className="mt-1">
-                  <textarea
-                    name="otherNotes"
-                    value={inputs.otherNotes}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="Any additional specifications or notes"
-                  />
                 </div>
               </div>
             </div>
