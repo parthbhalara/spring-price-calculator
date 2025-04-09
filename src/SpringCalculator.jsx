@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Download, Info, Calculator } from 'lucide-react';
+import { Download, Info, Calculator, FileText, FileSpreadsheet } from 'lucide-react';
+import jsPDF from 'jspdf';
 
 // Material properties
 const MATERIALS = {
@@ -257,6 +258,122 @@ Total Wire Weight,${totalWireWeight.toFixed(2)},kg
     const link = document.createElement('a');
     link.setAttribute('href', url);
     link.setAttribute('download', 'spring_calculations.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const downloadSpecificationsAsPDF = () => {
+    const doc = new jsPDF();
+    const lineHeight = 7;
+    let y = 20;
+
+    // Add title
+    doc.setFontSize(16);
+    doc.text('Spring Specifications Summary', 20, y);
+    y += lineHeight * 2;
+
+    // Add technical specifications
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('Technical Specifications:', 20, y);
+    y += lineHeight;
+
+    doc.setFont(undefined, 'normal');
+    const specs = [
+      `Wire Diameter: ${inputs.wireD} ± ${inputs.wireDTolerance} mm`,
+      `Outer Diameter: ${results.od} ± ${inputs.odTolerance} mm`,
+      `Inner Diameter: ${results.id} mm`,
+      `Mean Diameter: ${results.meanD} mm`,
+      `Total Coils: ${inputs.coilsTotal}`,
+      `Active Coils: ${inputs.coilsActive}`,
+      `Material: ${inputs.material === 'Custom' ? (inputs.customMaterialName || 'Custom Material') : inputs.material}`,
+      `Coil Direction: ${inputs.coilDirection || "Not specified"}`,
+      `Finish: ${inputs.finish || "Not specified"}`,
+      `Ends: ${inputs.ends || "Not specified"}`
+    ];
+
+    specs.forEach(spec => {
+      doc.text(spec, 20, y);
+      y += lineHeight;
+    });
+
+    if (inputs.otherNotes) {
+      y += lineHeight/2;
+      doc.text('Additional Notes:', 20, y);
+      y += lineHeight;
+      doc.text(inputs.otherNotes, 20, y);
+      y += lineHeight;
+    }
+
+    // Add price analysis with table
+    y += lineHeight * 2;
+    doc.setFont(undefined, 'bold');
+    doc.text('Price Analysis:', 20, y);
+    y += lineHeight * 1.5;
+
+    // Create table headers
+    doc.setFillColor(240, 240, 240);
+    doc.rect(20, y, 160, 8, 'F');
+    doc.setFont(undefined, 'bold');
+    doc.text('Quantity', 25, y + 6);
+    doc.text('Price per Spring', 75, y + 6);
+    doc.text('Total Price', 135, y + 6);
+    y += lineHeight + 3;
+
+    // Add table rows
+    doc.setFont(undefined, 'normal');
+    
+    // Row 1: 10 pieces
+    const price10 = ((inputs.setupCost + (results.pricePerSpring * 10)) / 10).toFixed(2);
+    const total10 = (inputs.setupCost + (results.pricePerSpring * 10)).toFixed(2);
+    doc.text('10', 25, y + 6);
+    doc.text(`Rs. ${price10}`, 75, y + 6);
+    doc.text(`Rs. ${total10}`, 135, y + 6);
+    doc.line(20, y + 8, 180, y + 8); // Add line after row
+    y += lineHeight + 3;
+
+    // Row 2: Production quantity
+    const priceQty = results.overallSellingPrice.toFixed(2);
+    const totalQty = (inputs.setupCost + (results.pricePerSpring * inputs.quantity)).toFixed(2);
+    doc.text(inputs.quantity.toString(), 25, y + 6);
+    doc.text(`Rs. ${priceQty}`, 75, y + 6);
+    doc.text(`Rs. ${totalQty}`, 135, y + 6);
+    doc.line(20, y + 8, 180, y + 8); // Add line after row
+
+    // Add vertical lines for table
+    doc.line(20, y - lineHeight - 11, 20, y + 8); // Left border
+    doc.line(70, y - lineHeight - 11, 70, y + 8); // After Quantity
+    doc.line(130, y - lineHeight - 11, 130, y + 8); // After Price per Spring
+    doc.line(180, y - lineHeight - 11, 180, y + 8); // Right border
+
+    // Save the PDF
+    doc.save('spring_specifications.pdf');
+  };
+
+  const downloadSpecificationsAsCSV = () => {
+    const csvContent = `Spring Specifications
+Wire Diameter (mm),${inputs.wireD} ± ${inputs.wireDTolerance}
+Outer Diameter (mm),${results.od} ± ${inputs.odTolerance}
+Inner Diameter (mm),${results.id}
+Mean Diameter (mm),${results.meanD}
+Total Coils,${inputs.coilsTotal}
+Active Coils,${inputs.coilsActive}
+Material,${inputs.material === 'Custom' ? (inputs.customMaterialName || 'Custom Material') : inputs.material}
+Coil Direction,${inputs.coilDirection || "Not specified"}
+Finish,${inputs.finish || "Not specified"}
+Ends,${inputs.ends || "Not specified"}
+${inputs.otherNotes ? `Additional Notes,${inputs.otherNotes}` : ''}
+
+Price Analysis
+Quantity,Price per Spring (₹),Total Price (₹)
+10,${((inputs.setupCost + (results.pricePerSpring * 10)) / 10).toFixed(2)},${(inputs.setupCost + (results.pricePerSpring * 10)).toFixed(2)}
+${inputs.quantity},${results.overallSellingPrice.toFixed(2)},${(inputs.setupCost + (results.pricePerSpring * inputs.quantity)).toFixed(2)}`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'spring_specifications.csv';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1055,33 +1172,23 @@ Total Wire Weight,${totalWireWeight.toFixed(2)},kg
                     </div>
                   </div>
 
-                  {/* Copy Button */}
-                  <button
-                    onClick={() => {
-                      const specifications = `Spring Specifications:
-Wire Diameter: ${inputs.wireD} ± ${inputs.wireDTolerance} mm
-Outer Diameter: ${results.od} ± ${inputs.odTolerance} mm
-Inner Diameter: ${results.id} mm
-Mean Diameter: ${results.meanD} mm
-Total Coils: ${inputs.coilsTotal}
-Active Coils: ${inputs.coilsActive}
-Material: ${inputs.material}
-Coil Direction: ${inputs.coilDirection || "Not specified"}
-Finish: ${inputs.finish || "Not specified"}
-Ends: ${inputs.ends || "Not specified"}
-${inputs.otherNotes ? `Additional Notes: ${inputs.otherNotes}` : ""}
-
-Price Analysis:
-10 Springs: ₹${((inputs.setupCost + (results.pricePerSpring * 10)) / 10).toFixed(2)} per spring (Total: ₹${(inputs.setupCost + (results.pricePerSpring * 10)).toFixed(2)})
-${inputs.quantity} Springs: ₹${results.overallSellingPrice.toFixed(2)} per spring (Total: ₹${(inputs.setupCost + (results.pricePerSpring * inputs.quantity)).toFixed(2)})`;
-                      
-                      navigator.clipboard.writeText(specifications);
-                      // You might want to add a toast notification here
-                    }}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
-                  >
-                    <span>Copy All Specifications</span>
-                  </button>
+                  {/* Download Buttons */}
+                  <div className="flex gap-4">
+                    <button
+                      onClick={downloadSpecificationsAsPDF}
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                    >
+                      <FileText size={20} />
+                      <span>Download PDF</span>
+                    </button>
+                    <button
+                      onClick={downloadSpecificationsAsCSV}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                    >
+                      <FileSpreadsheet size={20} />
+                      <span>Download CSV</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
