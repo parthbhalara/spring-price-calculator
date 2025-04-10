@@ -459,32 +459,32 @@ ${inputs.quantity},${results.overallSellingPrice.toFixed(2)},${(inputs.setupCost
     }, [inputs.wireD, inputs.diameter, inputs.diameterType]);
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4">
+        <div className="min-h-screen bg-gray-50 py-4 px-2 sm:px-4 md:py-8 md:px-4">
             <div className="max-w-7xl mx-auto">
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Spring Pricing & Parameter Calculator</h1>
-                    <p className="text-gray-600">Calculate spring parameters, costs, and view load-deflection characteristics</p>
+                <div className="text-center mb-4 md:mb-8">
+                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Spring Pricing & Parameter Calculator</h1>
+                    <p className="text-sm md:text-base text-gray-600">Calculate spring parameters, costs, and view load-deflection characteristics</p>
                 </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
                     {/* Input Module */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 flex justify-between items-center">
-                            <h2 className="text-xl font-semibold text-white flex items-center">
+                        <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 md:px-6 py-3 md:py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <h2 className="text-lg md:text-xl font-semibold text-white flex items-center">
                                 Input Parameters
                                 <InfoTooltip text="Enter the spring specifications and material properties" />
                             </h2>
                             <button
                                 onClick={handleReset}
-                                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors duration-200 flex items-center gap-2"
+                                className="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors duration-200 flex items-center justify-center gap-2"
                             >
                                 <Calculator className="w-4 h-4" />
                                 Reset All
                             </button>
                         </div>
                         
-                        <div className="p-6">
-                            <div className="space-y-6">
+                        <div className="p-4 md:p-6">
+                            <div className="space-y-4 md:space-y-6">
                                 {/* Geometry Section */}
                                 <div>
                                     <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
@@ -492,7 +492,7 @@ ${inputs.quantity},${results.overallSellingPrice.toFixed(2)},${(inputs.setupCost
                                         <InfoTooltip text="Define the physical dimensions of your spring" />
                                     </h3>
                                     
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         {/* Wire Diameter Input with Tolerance */}
                                         <div className="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
@@ -1000,34 +1000,34 @@ ${inputs.quantity},${results.overallSellingPrice.toFixed(2)},${(inputs.setupCost
                     </div>
 
                     {/* Results Module */}
-                    <div className="space-y-6">
+                    <div className="space-y-4 md:space-y-6">
                         {/* Results Card */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 flex justify-between items-center">
-                                <h2 className="text-xl font-semibold text-white flex items-center">
+                            <div className="bg-gradient-to-r from-green-500 to-green-600 px-4 md:px-6 py-3 md:py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                <h2 className="text-lg md:text-xl font-semibold text-white flex items-center">
                                     Results
                                     <InfoTooltip text="Calculated spring parameters and costs" />
                                 </h2>
                                 <button
                                     onClick={downloadResults}
-                                    className="flex items-center space-x-2 bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-lg transition-colors duration-200"
+                                    className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-lg transition-colors duration-200"
                                 >
                                     <Download size={16} />
                                     <span>Export CSV</span>
                                 </button>
                             </div>
 
-                            <div className="p-6">
-                                <div className="grid grid-cols-2 gap-6">
-                                    {/* Spring Index Card - Added at the top */}
-                                    <div className={`col-span-2 rounded-lg p-4 ${
+                            <div className="p-4 md:p-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                                    {/* Spring Index Card */}
+                                    <div className={`col-span-1 sm:col-span-2 rounded-lg p-4 ${
                                         results.springIndex >= 4 && results.springIndex <= 20 
                                             ? results.springIndex >= 6 && results.springIndex <= 12
                                                 ? 'bg-green-50' 
                                                 : 'bg-yellow-50'
                                             : 'bg-red-50'
                                     }`}>
-                                        <div className="flex items-center justify-between">
+                                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                                             <div className="flex items-center">
                                                 <p className="text-sm font-medium text-gray-500">Spring Index (C)</p>
                                                 <InfoTooltip text={`Spring Index (C) = Mean Diameter / Wire Diameter
@@ -1042,7 +1042,7 @@ Values outside these ranges may cause:
 • > 20: Buckling and tangling issues
 • 6-12: Ideal manufacturing & performance`} />
                                             </div>
-                                            <p className={`text-2xl font-bold ${
+                                            <p className={`text-xl md:text-2xl font-bold ${
                                                 results.springIndex >= 4 && results.springIndex <= 20 
                                                     ? results.springIndex >= 6 && results.springIndex <= 12
                                                         ? 'text-green-700' 
@@ -1065,37 +1065,37 @@ Values outside these ranges may cause:
                                     {/* Result Cards */}
                                     <div className="bg-gray-50 rounded-lg p-4">
                                         <p className="text-sm font-medium text-gray-500">Mean Diameter</p>
-                                        <p className="text-2xl font-bold text-gray-900">{results.meanD.toFixed(2)} <span className="text-sm font-normal text-gray-500">mm</span></p>
+                                        <p className="text-xl md:text-2xl font-bold text-gray-900">{results.meanD.toFixed(2)} <span className="text-sm font-normal text-gray-500">mm</span></p>
                                     </div>
 
                                     <div className="bg-gray-50 rounded-lg p-4">
                                         <p className="text-sm font-medium text-gray-500">Wire Volume</p>
-                                        <p className="text-2xl font-bold text-gray-900">{results.wireVolume.toFixed(2)} <span className="text-sm font-normal text-gray-500">mm³</span></p>
+                                        <p className="text-xl md:text-2xl font-bold text-gray-900">{results.wireVolume.toFixed(2)} <span className="text-sm font-normal text-gray-500">mm³</span></p>
                                     </div>
 
                                     <div className="bg-gray-50 rounded-lg p-4">
                                         <p className="text-sm font-medium text-gray-500">Spring Weight</p>
-                                        <p className="text-2xl font-bold text-gray-900">{results.springWeight.toFixed(2)} <span className="text-sm font-normal text-gray-500">g</span></p>
+                                        <p className="text-xl md:text-2xl font-bold text-gray-900">{results.springWeight.toFixed(2)} <span className="text-sm font-normal text-gray-500">g</span></p>
                                     </div>
 
                                     <div className="bg-gray-50 rounded-lg p-4">
                                         <p className="text-sm font-medium text-gray-500">Raw Material Cost</p>
-                                        <p className="text-2xl font-bold text-gray-900">₹{results.rawMaterialCost.toFixed(2)}</p>
+                                        <p className="text-xl md:text-2xl font-bold text-gray-900">₹{results.rawMaterialCost.toFixed(2)}</p>
                                     </div>
 
                                     <div className="bg-gray-50 rounded-lg p-4">
                                         <p className="text-sm font-medium text-gray-500">Spring Rate (K)</p>
-                                        <p className="text-2xl font-bold text-gray-900">{results.springRate.toFixed(2)} <span className="text-sm font-normal text-gray-500">N/mm</span></p>
+                                        <p className="text-xl md:text-2xl font-bold text-gray-900">{results.springRate.toFixed(2)} <span className="text-sm font-normal text-gray-500">N/mm</span></p>
                                     </div>
 
                                     <div className="bg-gray-50 rounded-lg p-4">
                                         <p className="text-sm font-medium text-gray-500">Load at Load Height</p>
-                                        <p className="text-2xl font-bold text-gray-900">{results.loadAtL1.toFixed(2)} <span className="text-sm font-normal text-gray-500">N</span></p>
+                                        <p className="text-xl md:text-2xl font-bold text-gray-900">{results.loadAtL1.toFixed(2)} <span className="text-sm font-normal text-gray-500">N</span></p>
                                     </div>
 
                                     <div className="col-span-2 bg-blue-50 rounded-lg p-4">
                                         <p className="text-sm font-medium text-blue-600">Price per Spring</p>
-                                        <p className="text-2xl font-bold text-blue-900">₹{results.pricePerSpring.toFixed(2)}</p>
+                                        <p className="text-xl md:text-2xl font-bold text-blue-900">₹{results.pricePerSpring.toFixed(2)}</p>
                                     </div>
 
                                     <div className="col-span-2 bg-green-50 rounded-lg p-4">
@@ -1105,24 +1105,24 @@ Values outside these ranges may cause:
 
                                     <div className="bg-gray-50 rounded-lg p-4">
                                         <p className="text-sm font-medium text-gray-500">Total Wire Weight</p>
-                                        <p className="text-2xl font-bold text-gray-900">{results.totalWireWeight.toFixed(2)} <span className="text-sm font-normal text-gray-500">kg</span></p>
+                                        <p className="text-xl md:text-2xl font-bold text-gray-900">{results.totalWireWeight.toFixed(2)} <span className="text-sm font-normal text-gray-500">kg</span></p>
                                         <p className="text-xs text-gray-500 mt-1">For {inputs.quantity.toLocaleString()} springs</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Graph Card */}
+                        {/* Graph Cards */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <div className="bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-4">
-                                <h2 className="text-xl font-semibold text-white flex items-center">
+                            <div className="bg-gradient-to-r from-purple-500 to-purple-600 px-4 md:px-6 py-3 md:py-4">
+                                <h2 className="text-lg md:text-xl font-semibold text-white flex items-center">
                                     Load vs Deflection Curve
                                     <InfoTooltip text="Visual representation of spring behavior under load" />
                                 </h2>
                             </div>
 
-                            <div className="p-6">
-                                <div className="h-80">
+                            <div className="p-4 md:p-6">
+                                <div className="h-60 md:h-80">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <LineChart
                                             data={graphData}
@@ -1159,15 +1159,15 @@ Values outside these ranges may cause:
 
                         {/* Price vs Quantity Analysis Card */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4">
-                                <h2 className="text-xl font-semibold text-white flex items-center">
+                            <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-4 md:px-6 py-3 md:py-4">
+                                <h2 className="text-lg md:text-xl font-semibold text-white flex items-center">
                                     Price vs Quantity Analysis
                                     <InfoTooltip text="How the overall selling price changes with production quantity" />
                                 </h2>
                             </div>
 
-                            <div className="p-6">
-                                <div className="h-80">
+                            <div className="p-4 md:p-6">
+                                <div className="h-60 md:h-80">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <LineChart
                                             data={quantityAnalysisData}
@@ -1206,20 +1206,20 @@ Values outside these ranges may cause:
                         </div>
 
                         {/* Specifications Summary Card */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-6">
-                            <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 px-6 py-4">
-                                <h2 className="text-xl font-semibold text-white flex items-center">
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 md:px-6 py-3 md:py-4">
+                                <h2 className="text-lg md:text-xl font-semibold text-white flex items-center">
                                     Specifications Summary
                                     <InfoTooltip text="Complete spring specifications and pricing summary" />
                                 </h2>
                             </div>
 
-                            <div className="p-6">
-                                <div className="space-y-6">
+                            <div className="p-4 md:p-6">
+                                <div className="space-y-4 md:space-y-6">
                                     {/* Technical Specifications */}
-                                    <div className="bg-gray-50 rounded-lg p-6">
-                                        <h3 className="text-lg font-medium text-gray-900 mb-4">Technical Specifications</h3>
-                                        <div className="space-y-2 font-mono text-sm">
+                                    <div className="bg-gray-50 rounded-lg p-4 md:p-6">
+                                        <h3 className="text-base md:text-lg font-medium text-gray-900 mb-4">Technical Specifications</h3>
+                                        <div className="space-y-2 font-mono text-sm overflow-x-auto">
                                             <div className="flex justify-between border-b border-gray-200 py-2">
                                                 <span className="text-gray-600">Spring Wire Diameter:</span>
                                                 <span className="text-gray-900">{inputs.wireD} ± {inputs.wireDTolerance} mm</span>
@@ -1274,8 +1274,8 @@ Values outside these ranges may cause:
                                     </div>
 
                                     {/* Price Analysis Table */}
-                                    <div className="bg-gray-50 rounded-lg p-6">
-                                        <h3 className="text-lg font-medium text-gray-900 mb-4">Price Analysis</h3>
+                                    <div className="bg-gray-50 rounded-lg p-4 md:p-6">
+                                        <h3 className="text-base md:text-lg font-medium text-gray-900 mb-4">Price Analysis</h3>
                                         <div className="overflow-x-auto">
                                             <table className="min-w-full divide-y divide-gray-200">
                                                 <thead>
@@ -1302,17 +1302,17 @@ Values outside these ranges may cause:
                                     </div>
 
                                     {/* Download Buttons */}
-                                    <div className="flex gap-4">
+                                    <div className="flex flex-col sm:flex-row gap-4">
                                         <button
                                             onClick={downloadSpecificationsAsPDF}
-                                            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                                            className="w-full sm:w-1/2 bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
                                         >
                                             <FileText size={20} />
                                             <span>Download PDF</span>
                                         </button>
                                         <button
                                             onClick={downloadSpecificationsAsCSV}
-                                            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                                            className="w-full sm:w-1/2 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
                                         >
                                             <FileSpreadsheet size={20} />
                                             <span>Download CSV</span>
