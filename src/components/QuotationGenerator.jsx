@@ -3,6 +3,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, AlignmentType, HeadingLevel, BorderStyle } from 'docx';
 import { saveAs } from 'file-saver';
+import * as XLSX from 'xlsx';
 
 // Company constants
 const COMPANY_INFO = {
@@ -23,9 +24,9 @@ const QuotationGenerator = ({ springData, results }) => {
         address: '',
         quotationNumber: '',
         quotationDate: new Date().toISOString().split('T')[0],
-        validityPeriod: '30 days',
+        validityPeriod: '',
         paymentTerms: '50% advance, 50% before dispatch',
-        deliveryTime: '2-3 weeks'
+        deliveryTime: ''
     });
 
     const handleInputChange = (e) => {
@@ -37,89 +38,120 @@ const QuotationGenerator = ({ springData, results }) => {
     };
 
     const generatePDF = () => {
-        const doc = new jsPDF();
+        const doc = new jsPDF({
+            format: 'a4',
+            unit: 'mm'
+        });
         
         // Add title and company details
         doc.setFontSize(16);
-        doc.text(COMPANY_INFO.name, 105, 20, { align: 'center' });
+        doc.text(COMPANY_INFO.name, 105, 15, { align: 'center' });
         
         // Add company contact details
-        doc.setFontSize(10);
+        doc.setFontSize(9);
         doc.text([
             `Phone: ${COMPANY_INFO.phone}`,
             `Email: ${COMPANY_INFO.email}`,
             `Website: ${COMPANY_INFO.website}`,
             `GST: ${COMPANY_INFO.gst}`
-        ], 105, 30, { align: 'center' });
+        ], 105, 25, { align: 'center' });
         
         // Add company address
-        doc.text(COMPANY_INFO.address.split('\n'), 105, 50, { align: 'center' });
+        doc.text(COMPANY_INFO.address.split('\n'), 105, 40, { align: 'center' });
         
         // Add horizontal line
         doc.setDrawColor(200);
-        doc.line(15, 65, 195, 65);
+        doc.line(15, 55, 195, 55);
+        
+        // Format date as DD/MM/YYYY
+        const formattedDate = companyInfo.quotationDate ? 
+            new Date(companyInfo.quotationDate).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            }) : 
+            new Date().toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
         
         // Add quotation details
-        doc.setFontSize(12);
-        doc.text(`Quotation No: ${companyInfo.quotationNumber || 'Not Specified'}`, 15, 80);
-        doc.text(`Date: ${companyInfo.quotationDate || new Date().toLocaleDateString()}`, 15, 87);
+        doc.setFontSize(11);
+        doc.text(`Quotation No: ${companyInfo.quotationNumber || 'Not Specified'}`, 15, 65);
+        doc.text(`Date: ${formattedDate}`, 15, 72);
         
         // Add client details
-        doc.text('To:', 15, 100);
+        doc.text('To:', 15, 82);
         doc.text([
             companyInfo.companyName,
             companyInfo.address,
             `Attn: ${companyInfo.contactPerson}`,
             `Email: ${companyInfo.email}`,
             `Phone: ${companyInfo.phone}`
-        ], 25, 107);
+        ], 25, 89);
         
         // Add spring specifications
         doc.setFontSize(12);
-        doc.text('Spring Specifications', 15, 145);
+        doc.text('Spring Specifications', 15, 115);
         
         const specRows = [
             ['Wire Diameter', `${springData.wireD} mm`, 'Outer Diameter', `${results.od?.toFixed(2)} mm`],
             ['Free Length', `${springData.freeLength} mm`, 'Total Coils', springData.coilsTotal],
-            ['Material', springData.material, 'Spring Rate', `${results.springRate?.toFixed(2)} N/mm`],
-            ['Finish', springData.finish || 'Standard', 'End Type', springData.ends || 'Standard']
+            ['Material', `${springData.material}${springData.materialRemark ? ` (${springData.materialRemark})` : ''}`, 'Finish', springData.finish || 'Standard'],
+            ['End Type', springData.ends || 'Standard', 'Coil Direction', springData.coilDirection || 'Not specified']
         ];
         
         autoTable(doc, {
-            startY: 150,
+            startY: 120,
             head: [['Parameter', 'Value', 'Parameter', 'Value']],
             body: specRows,
             theme: 'grid',
-            styles: { fontSize: 10 },
-            columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 40 }, 2: { cellWidth: 40 }, 3: { cellWidth: 40 } }
+            styles: { fontSize: 9, cellPadding: 2 },
+            columnStyles: { 
+                0: { cellWidth: 45 }, 
+                1: { cellWidth: 45 }, 
+                2: { cellWidth: 45 }, 
+                3: { cellWidth: 45 } 
+            },
+            headStyles: { fillColor: [70, 70, 70] }
         });
         
         // Add pricing details
-        doc.text('Pricing Details', 15, doc.lastAutoTable.finalY + 15);
+        doc.setFontSize(12);
+        doc.text('Pricing Details', 15, doc.lastAutoTable.finalY + 10);
         
         const priceRows = [
             ['Quantity', springData.quantity.toString()],
-            ['Price per Spring', `Rs. ${results.pricePerSpring?.toFixed(2)}`]
+            ['Overall Selling Price', `Rs. ${results.overallSellingPrice?.toFixed(2)}`]
         ];
         
         autoTable(doc, {
-            startY: doc.lastAutoTable.finalY + 20,
+            startY: doc.lastAutoTable.finalY + 15,
             head: [['Description', 'Value']],
             body: priceRows,
             theme: 'grid',
-            styles: { fontSize: 10 }
+            styles: { fontSize: 9, cellPadding: 2 },
+            columnStyles: { 
+                0: { cellWidth: 90 }, 
+                1: { cellWidth: 70 }
+            },
+            headStyles: { fillColor: [70, 70, 70] }
         });
         
         // Add terms and conditions
-        doc.text('Terms & Conditions', 15, doc.lastAutoTable.finalY + 15);
-        doc.setFontSize(10);
-        doc.text([
-            `1. Validity: ${companyInfo.validityPeriod}`,
+        doc.setFontSize(12);
+        doc.text('Terms & Conditions', 15, doc.lastAutoTable.finalY + 10);
+        doc.setFontSize(9);
+        const terms = [
+            companyInfo.validityPeriod ? `1. Validity: ${companyInfo.validityPeriod}` : null,
             `2. Payment Terms: ${companyInfo.paymentTerms}`,
-            `3. Delivery Time: ${companyInfo.deliveryTime}`,
+            companyInfo.deliveryTime ? `3. Delivery Time: ${companyInfo.deliveryTime}` : null,
             '4. Prices are exclusive of GST',
             '5. Specifications are subject to manufacturing tolerances'
-        ], 15, doc.lastAutoTable.finalY + 25);
+        ].filter(term => term !== null);
+        
+        doc.text(terms, 15, doc.lastAutoTable.finalY + 17);
         
         // Add footer with company details
         const pageCount = doc.internal.getNumberOfPages();
@@ -131,6 +163,13 @@ const QuotationGenerator = ({ springData, results }) => {
                 105,
                 285,
                 { align: 'center' }
+            );
+            // Add page numbers
+            doc.text(
+                `Page ${i} of ${pageCount}`,
+                195,
+                285,
+                { align: 'right' }
             );
         }
         
@@ -172,6 +211,8 @@ const QuotationGenerator = ({ springData, results }) => {
             ['Pricing Details'],
             ['Quantity', springData.quantity],
             ['Price per Spring', `Rs. ${results.pricePerSpring?.toFixed(2)}`],
+            ['Overall Selling Price', `Rs. ${results.overallSellingPrice?.toFixed(2)}`],
+            ['Total Amount', `Rs. ${(results.overallSellingPrice * springData.quantity)?.toFixed(2)}`],
             [],
             ['Terms & Conditions'],
             ['Validity', companyInfo.validityPeriod],
@@ -315,6 +356,68 @@ const QuotationGenerator = ({ springData, results }) => {
         saveAs(buffer, `Quotation_${companyInfo.quotationNumber || 'Draft'}.docx`);
     };
 
+    const generateExcelWithFormulas = () => {
+        // Create workbook and worksheet
+        const wb = XLSX.utils.book_new();
+        
+        // Prepare data arrays for the worksheet
+        const headers = [
+            'Input Parameters', '', 'Calculated Results', '',
+            'Material Properties', '', 'Performance Parameters', ''
+        ];
+        
+        // Input parameters
+        const inputData = [
+            ['Parameter', 'Value', 'Parameter', 'Value', 'Parameter', 'Value', 'Parameter', 'Value'],
+            ['Wire Diameter (mm)', springData.wireD, 'Mean Diameter (mm)', results.meanD, 'Material', springData.material, 'Spring Rate (N/mm)', results.springRate],
+            ['Outer Diameter (mm)', results.od, 'Inner Diameter (mm)', results.id, 'Density (g/cm³)', springData.density, 'Natural Frequency (Hz)', results.naturalFrequency],
+            ['Free Length (mm)', springData.freeLength, 'Solid Length (mm)', results.solidLength, 'Shear Modulus (MPa)', springData.G, 'Maximum Deflection (mm)', results.maxDeflection],
+            ['Total Coils', springData.coilsTotal, 'Spring Index', results.springIndex, 'Elastic Modulus (MPa)', results.elasticModulus, 'Energy Stored (N·mm)', results.energyStored],
+            ['Active Coils', springData.coilsActive, 'Wire Volume (mm³)', results.wireVolume, 'Ultimate Tensile Strength (MPa)', springData.UTS, 'Buckling Risk Ratio', results.bucklingRiskRatio],
+            ['Load Height (mm)', springData.loadHeight, 'Spring Weight (g)', results.springWeight, '', '', 'Stress Ratio (%)', results.stressRatio * 100],
+            ['Setup Cost (Rs.)', springData.setupCost, 'Raw Material Cost (Rs.)', results.rawMaterialCost, '', '', '', ''],
+            ['Quantity', springData.quantity, 'Price per Spring (Rs.)', results.pricePerSpring, '', '', '', ''],
+            ['', '', 'Overall Price (Rs.)', results.overallSellingPrice, '', '', '', ''],
+            ['', '', 'Total Wire Weight (kg)', results.totalWireWeight, '', '', '', '']
+        ];
+
+        // Add formulas
+        const formulaData = [
+            ['Formulas and Calculations:', ''],
+            ['Mean Diameter (D)', '=Wire_Diameter + Outer_Diameter/2'],
+            ['Inner Diameter (Di)', '=Outer_Diameter - 2*Wire_Diameter'],
+            ['Spring Index (C)', '=Mean_Diameter/Wire_Diameter'],
+            ['Wire Volume', '=PI()*POW(Wire_Diameter/2, 2)*PI()*Mean_Diameter*Total_Coils'],
+            ['Spring Weight', '=Wire_Volume*Density/1000'],
+            ['Spring Rate (k)', '=Shear_Modulus*POW(Wire_Diameter,4)/(8*POW(Mean_Diameter,3)*Active_Coils)'],
+            ['Load at L1', '=Spring_Rate*(Free_Length-Load_Height)'],
+            ['Raw Material Cost', '=(Spring_Weight/1000)*Material_Cost'],
+            ['Price per Spring', '=IF(Override_Margin,Manual_Price,Raw_Material_Cost/Margin_Ratio)'],
+            ['Overall Price', '=(Setup_Cost + Price_per_Spring*Quantity)/Quantity']
+        ];
+
+        // Create the main data worksheet
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...inputData]);
+        
+        // Create the formulas worksheet
+        const wsFormulas = XLSX.utils.aoa_to_sheet(formulaData);
+
+        // Add styling
+        ws['!cols'] = [
+            {wch: 20}, {wch: 15}, {wch: 20}, {wch: 15},
+            {wch: 20}, {wch: 15}, {wch: 20}, {wch: 15}
+        ];
+
+        // Add the worksheets to the workbook
+        XLSX.utils.book_append_sheet(wb, ws, "Spring Calculator");
+        XLSX.utils.book_append_sheet(wb, wsFormulas, "Formulas");
+
+        // Generate Excel file
+        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        saveAs(blob, `Spring_Calculator_${companyInfo.quotationNumber || 'Template'}.xlsx`);
+    };
+
     return (
         <div className="bg-white rounded-lg shadow p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Generate Quotation</h2>
@@ -452,7 +555,7 @@ const QuotationGenerator = ({ springData, results }) => {
                 </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <button
                     onClick={generatePDF}
                     className="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
@@ -470,6 +573,12 @@ const QuotationGenerator = ({ springData, results }) => {
                     className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                     Download Word
+                </button>
+                <button
+                    onClick={generateExcelWithFormulas}
+                    className="bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                >
+                    Download Excel Template
                 </button>
             </div>
         </div>
