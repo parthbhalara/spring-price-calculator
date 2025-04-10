@@ -193,7 +193,14 @@ const initialResults = {
     shearStress: 0,
     stressAtSolidLength: 0,
     stressRatio: 0,
-    elasticModulus: 0
+    elasticModulus: 0,
+    maxDeflection: 0,
+    resonantFrequency: 0,
+    naturalFrequency: 0,
+    energyStored: 0,
+    bucklingRisk: false,
+    bucklingRiskRatio: 0,
+    relaxationEstimate: 0
 };
 
 const SpringCalculator = () => {
@@ -371,6 +378,41 @@ const SpringCalculator = () => {
         // Calculate total wire weight for production quantity
         const totalWireWeight = (springWeight * quantity) / 1000; // Convert to kg
         
+        // Calculate maximum deflection (δmax = F/k)
+        const maxDeflection = loadAtL1 / springRate;
+
+        // Calculate spring mass (in kg)
+        const springMass = springWeight / 1000;
+
+        // Calculate natural frequency (f = (1/2π)√(k/m))
+        // Convert spring rate to N/m and mass to kg
+        const springRateNm = springRate * 1000; // Convert from N/mm to N/m
+        const naturalFrequency = (1 / (2 * Math.PI)) * Math.sqrt(springRateNm / springMass);
+
+        // Resonant frequency (typically 0.5-0.8 times natural frequency)
+        const resonantFrequency = 0.65 * naturalFrequency;
+
+        // Calculate energy stored (U = ½kδ²)
+        const energyStored = 0.5 * springRate * Math.pow(maxDeflection, 2);
+
+        // Calculate buckling risk
+        // Critical length ratio (L/D) for compression springs
+        const lengthDiameterRatio = freeLength / meanD;
+        const criticalRatio = 2.6; // Standard critical ratio for fixed-fixed end conditions
+        const bucklingRisk = lengthDiameterRatio > criticalRatio;
+        const bucklingRiskRatio = lengthDiameterRatio / criticalRatio;
+
+        // Estimate relaxation (typical range 1-5% for most spring materials)
+        // This is a simplified estimate based on material type
+        let relaxationEstimate = 0;
+        if (inputs.material.includes('Stainless')) {
+            relaxationEstimate = 2; // 2% for stainless steel
+        } else if (inputs.material.includes('Music Wire')) {
+            relaxationEstimate = 1; // 1% for music wire
+        } else {
+            relaxationEstimate = 3; // 3% for other materials
+        }
+
         // Update results
         setResults({
             meanD,
@@ -392,13 +434,20 @@ const SpringCalculator = () => {
             shearStress,
             stressAtSolidLength,
             stressRatio,
-            elasticModulus
+            elasticModulus,
+            maxDeflection,
+            resonantFrequency,
+            naturalFrequency,
+            energyStored,
+            bucklingRisk,
+            bucklingRiskRatio,
+            relaxationEstimate
         });
         
         // Generate graph data for load vs deflection
         const graphPoints = [];
-        const maxDeflection = freeLength;
-        for (let i = 0; i <= maxDeflection; i += maxDeflection / 10) {
+        const graphMaxDeflection = freeLength;
+        for (let i = 0; i <= graphMaxDeflection; i += graphMaxDeflection / 10) {
             graphPoints.push({
                 deflection: i,
                 load: springRate * i
@@ -1389,6 +1438,44 @@ Values outside these ranges may cause:
                                             <div>
                                                 <p className="text-sm font-medium text-gray-500">Stress Ratio</p>
                                                 <p className="text-lg font-bold text-gray-900">{(results.stressRatio * 100)?.toFixed(1)}%</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Performance Characteristics Section */}
+                                    <div className="col-span-2 bg-gray-50 rounded-lg p-4">
+                                        <h3 className="text-base font-medium text-gray-900 mb-3">Performance Characteristics</h3>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Maximum Deflection</p>
+                                                <p className="text-lg font-bold text-gray-900">{results.maxDeflection?.toFixed(2)} <span className="text-sm font-normal text-gray-500">mm</span></p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Natural Frequency</p>
+                                                <p className="text-lg font-bold text-gray-900">{results.naturalFrequency?.toFixed(1)} <span className="text-sm font-normal text-gray-500">Hz</span></p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Resonant Frequency</p>
+                                                <p className="text-lg font-bold text-gray-900">{results.resonantFrequency?.toFixed(1)} <span className="text-sm font-normal text-gray-500">Hz</span></p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Energy Stored</p>
+                                                <p className="text-lg font-bold text-gray-900">{results.energyStored?.toFixed(3)} <span className="text-sm font-normal text-gray-500">N⋅mm</span></p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Buckling Risk</p>
+                                                <div className="flex items-center">
+                                                    <p className={`text-lg font-bold ${results.bucklingRisk ? 'text-red-600' : 'text-green-600'}`}>
+                                                        {results.bucklingRisk ? 'High' : 'Low'}
+                                                    </p>
+                                                    <p className="text-sm text-gray-500 ml-2">
+                                                        ({(results.bucklingRiskRatio * 100).toFixed(1)}% of critical)
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Estimated Relaxation</p>
+                                                <p className="text-lg font-bold text-gray-900">{results.relaxationEstimate?.toFixed(1)}% <span className="text-sm font-normal text-gray-500">at constant load</span></p>
                                             </div>
                                         </div>
                                     </div>
