@@ -5,12 +5,108 @@ import jsPDF from 'jspdf';
 
 // Material properties
 const MATERIALS = {
-  'Steel ASTM A228': { density: 7.85, G: 79300, cost: 350 },
-  'Stainless Steel 302': { density: 7.92, G: 69000, cost: 550 },
-  'Chrome Silicon': { density: 7.85, G: 77200, cost: 400 },
-  'Phosphor Bronze': { density: 8.8, G: 41400, cost: 600 },
-  'Inconel X750': { density: 8.28, G: 79300, cost: 950 },
-  'Custom': { density: 7.85, G: 79300, cost: 300 }
+    // IS 4454 Materials
+    'IS 4454 Part 1 - Cold drawn unalloyed steel': { 
+        density: 7.85, 
+        G: 80000, 
+        cost: 320, 
+        notes: 'Grade 1/2/3, Cold drawn unalloyed steel wire',
+        grade: 'Grade 1/2/3'
+    },
+    'IS 4454 Part 2 - Oil hardened and tempered': { 
+        density: 7.85, 
+        G: 80000, 
+        cost: 350, 
+        notes: 'Class I/II, Oil hardened and tempered steel wire',
+        grade: 'Class I/II'
+    },
+    'IS 4454 Part 3 - Stainless steel': { 
+        density: 7.95, 
+        G: 70000, 
+        cost: 550, 
+        notes: 'Grade 302/304/316, Stainless steel wire for springs',
+        grade: '302/304/316'
+    },
+    'IS 4454 Part 4 - Patented and cold drawn': { 
+        density: 7.85, 
+        G: 80000, 
+        cost: 380, 
+        notes: 'Class I/II, Patented and cold drawn unalloyed steel',
+        grade: 'Class I/II'
+    },
+    // Other Standard Materials
+    'Music Wire (High Carbon Steel, ASTM A228)': { 
+        density: 7.86, 
+        G: 80500, 
+        cost: 350, 
+        notes: 'High tensile strength; used in static applications'
+    },
+    'Oil Tempered Wire (ASTM A229 / A230)': { 
+        density: 7.85, 
+        G: 78500, 
+        cost: 380, 
+        notes: 'Used in heavy-duty springs; more fatigue resistant'
+    },
+    'Stainless Steel 302/304 (ASTM A313)': { 
+        density: 7.90, 
+        G: 71500, 
+        cost: 550, 
+        notes: 'Corrosion-resistant; common in food, pharma, marine'
+    },
+    'Stainless Steel 316': { 
+        density: 7.99, 
+        G: 68500, 
+        cost: 650, 
+        notes: 'Better corrosion resistance than 304'
+    },
+    'Phosphor Bronze (ASTM B159)': { 
+        density: 8.80, 
+        G: 44500, 
+        cost: 750, 
+        notes: 'Good conductivity, corrosion resistance'
+    },
+    'Beryllium Copper (ASTM B197)': { 
+        density: 8.25, 
+        G: 49500, 
+        cost: 950, 
+        notes: 'Non-magnetic, good fatigue, electrical use'
+    },
+    'Chrome Silicon (ASTM A401)': { 
+        density: 7.85, 
+        G: 81000, 
+        cost: 450, 
+        notes: 'High strength for high stress applications'
+    },
+    'Chrome Vanadium (ASTM A231)': { 
+        density: 7.85, 
+        G: 79000, 
+        cost: 480, 
+        notes: 'Shock-resistant; used in automotive springs'
+    },
+    'Inconel X-750': { 
+        density: 8.28, 
+        G: 74000, 
+        cost: 1200, 
+        notes: 'High temperature resistance; aerospace use'
+    },
+    'Monel 400': { 
+        density: 8.80, 
+        G: 65000, 
+        cost: 900, 
+        notes: 'High corrosion resistance; marine use'
+    },
+    'Titanium Alloy (Ti-6Al-4V)': { 
+        density: 4.43, 
+        G: 43500, 
+        cost: 2500, 
+        notes: 'Lightweight; used in aerospace, medical springs'
+    },
+    'Custom': { 
+        density: 7.85, 
+        G: 79300, 
+        cost: 300, 
+        notes: 'Custom material properties'
+    }
 };
 
 // Add InfoTooltip component
@@ -42,11 +138,11 @@ const initialState = {
     coilsActive: 0,
     freeLength: 0,
     loadHeight: 0,
-    material: 'Steel ASTM A228',
+    material: 'Music Wire (High Carbon Steel, ASTM A228)',
     customMaterialName: '',
-    materialCost: MATERIALS['Steel ASTM A228'].cost,
-    density: MATERIALS['Steel ASTM A228'].density,
-    G: MATERIALS['Steel ASTM A228'].G,
+    materialCost: MATERIALS['Music Wire (High Carbon Steel, ASTM A228)'].cost,
+    density: MATERIALS['Music Wire (High Carbon Steel, ASTM A228)'].density,
+    G: MATERIALS['Music Wire (High Carbon Steel, ASTM A228)'].G,
     marginRatio: 0.4,
     overrideMargin: false,
     manualPrice: 0,
@@ -60,7 +156,9 @@ const initialState = {
     coilDirection: '',
     finish: '',
     ends: '',
-    otherNotes: ''
+    otherNotes: '',
+    overrideMaterialCost: false,
+    materialRemark: '',
 };
 
 const initialResults = {
@@ -115,8 +213,16 @@ const SpringCalculator = () => {
                 ...newInputs,
                 density: MATERIALS[value].density,
                 G: MATERIALS[value].G,
-                materialCost: MATERIALS[value].cost
+                materialCost: newInputs.overrideMaterialCost ? newInputs.materialCost : MATERIALS[value].cost
             };
+        }
+
+        // Handle material cost override changes
+        if (name === 'overrideMaterialCost') {
+            if (checked === false) {
+                // If disabling override, reset to default cost
+                newInputs.materialCost = MATERIALS[newInputs.material].cost;
+            }
         }
         
         setInputs(newInputs);
@@ -268,6 +374,13 @@ const SpringCalculator = () => {
     // Download results as CSV
     const downloadResults = () => {
         const { meanD, wireVolume, springWeight, rawMaterialCost, springRate, loadAtL1, sellingPrice, pricePerSpring, overallSellingPrice, totalWireWeight } = results;
+        const materialName = inputs.material === 'Custom' ? 
+            (inputs.customMaterialName || 'Custom Material') : 
+            inputs.material;
+        const materialDisplay = inputs.materialRemark ? 
+            `${materialName} (${inputs.materialRemark})` : 
+            materialName;
+            
         const csvContent = `Parameter,Value,Unit
 Wire Diameter,${inputs.wireD},mm
 Diameter (${inputs.diameterType}),${inputs.diameter},mm
@@ -276,7 +389,7 @@ Total Coils,${inputs.coilsTotal},
 Active Coils,${inputs.coilsActive},
 Free Length,${inputs.freeLength},mm
 Load Height,${inputs.loadHeight},mm
-Material,${inputs.material},
+Material,${materialDisplay},
 Material Cost,${inputs.materialCost},₹/kg
 Density,${inputs.density},g/cm³
 Shear Modulus (G),${inputs.G},MPa
@@ -317,6 +430,13 @@ Total Wire Weight,${totalWireWeight.toFixed(2)},kg
         doc.text('Technical Specifications:', 20, y);
         y += lineHeight;
 
+        const materialName = inputs.material === 'Custom' ? 
+            (inputs.customMaterialName || 'Custom Material') : 
+            inputs.material;
+        const materialDisplay = inputs.materialRemark ? 
+            `${materialName} (${inputs.materialRemark})` : 
+            materialName;
+
         doc.setFont(undefined, 'normal');
         const specs = [
             `Wire Diameter: ${inputs.wireD} ± ${inputs.wireDTolerance} mm`,
@@ -325,7 +445,7 @@ Total Wire Weight,${totalWireWeight.toFixed(2)},kg
             `Mean Diameter: ${results.meanD} mm`,
             `Total Coils: ${inputs.coilsTotal}`,
             `Active Coils: ${inputs.coilsActive}`,
-            `Material: ${inputs.material === 'Custom' ? (inputs.customMaterialName || 'Custom Material') : inputs.material}`,
+            `Material: ${materialDisplay}`,
             `Coil Direction: ${inputs.coilDirection || "Not specified"}`,
             `Finish: ${inputs.finish || "Not specified"}`,
             `Ends: ${inputs.ends || "Not specified"}`
@@ -390,6 +510,13 @@ Total Wire Weight,${totalWireWeight.toFixed(2)},kg
     };
 
     const downloadSpecificationsAsCSV = () => {
+        const materialName = inputs.material === 'Custom' ? 
+            (inputs.customMaterialName || 'Custom Material') : 
+            inputs.material;
+        const materialDisplay = inputs.materialRemark ? 
+            `${materialName} (${inputs.materialRemark})` : 
+            materialName;
+            
         const csvContent = `Spring Specifications
 Wire Diameter (mm),${inputs.wireD} ± ${inputs.wireDTolerance}
 Outer Diameter (mm),${results.od} ± ${inputs.odTolerance}
@@ -397,7 +524,7 @@ Inner Diameter (mm),${results.id}
 Mean Diameter (mm),${results.meanD}
 Total Coils,${inputs.coilsTotal}
 Active Coils,${inputs.coilsActive}
-Material,${inputs.material === 'Custom' ? (inputs.customMaterialName || 'Custom Material') : inputs.material}
+Material,${materialDisplay}
 Coil Direction,${inputs.coilDirection || "Not specified"}
 Finish,${inputs.finish || "Not specified"}
 Ends,${inputs.ends || "Not specified"}
@@ -688,8 +815,8 @@ ${inputs.quantity},${results.overallSellingPrice.toFixed(2)},${(inputs.setupCost
                                     </h3>
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {/* Material Selection */}
-                                        <div>
+                                        {/* Material Selection with Custom Remark */}
+                                        <div className="col-span-2">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                                 Material
                                                 <InfoTooltip text="Select the spring material or choose Custom to enter your own" />
@@ -698,12 +825,70 @@ ${inputs.quantity},${results.overallSellingPrice.toFixed(2)},${(inputs.setupCost
                                                 name="material"
                                                 value={inputs.material}
                                                 onChange={handleInputChange}
-                                                className="block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                                                className="block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300 mb-2"
                                             >
-                                                {Object.keys(MATERIALS).map((mat) => (
-                                                    <option key={mat} value={mat}>{mat}</option>
+                                                {Object.entries(MATERIALS).map(([mat, props]) => (
+                                                    mat !== 'Custom' && (
+                                                        <option key={mat} value={mat}>
+                                                            {mat} - {props.notes}
+                                                        </option>
+                                                    )
                                                 ))}
+                                                <option value="Custom">Custom Material</option>
                                             </select>
+                                            
+                                            {/* Custom Remark for Material */}
+                                            <div className="mt-2">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Material Remark
+                                                    <InfoTooltip text="Add any custom notes or remarks about the material (optional)" />
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="materialRemark"
+                                                    value={inputs.materialRemark}
+                                                    onChange={handleInputChange}
+                                                    placeholder="Optional: Add custom remark for this material"
+                                                    className="block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Material Properties Display */}
+                                        <div className="col-span-2 bg-gray-50 rounded-lg p-4 mb-4">
+                                            <h4 className="text-sm font-medium text-gray-700 mb-2">
+                                                Material: {inputs.material === 'Custom' ? 
+                                                    (inputs.customMaterialName || 'Custom Material') : 
+                                                    inputs.material}
+                                                {inputs.materialRemark && (
+                                                    <span className="text-gray-500 ml-2">({inputs.materialRemark})</span>
+                                                )}
+                                            </h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                                <div>
+                                                    <span className="text-gray-500">Density:</span>
+                                                    <span className="ml-2 font-medium">{inputs.density} g/cm³</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500">Shear Modulus:</span>
+                                                    <span className="ml-2 font-medium">{(inputs.G/1000).toFixed(1)} GPa</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500">Default Cost:</span>
+                                                    <span className="ml-2 font-medium">₹{MATERIALS[inputs.material].cost}/kg</span>
+                                                </div>
+                                                {inputs.material !== 'Custom' && MATERIALS[inputs.material].grade && (
+                                                    <div className="md:col-span-3">
+                                                        <span className="text-gray-500">Grade:</span>
+                                                        <span className="ml-2 font-medium">{MATERIALS[inputs.material].grade}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {inputs.material !== 'Custom' && (
+                                                <p className="text-sm text-gray-600 mt-2">
+                                                    <span className="font-medium">Note:</span> {MATERIALS[inputs.material].notes}
+                                                </p>
+                                            )}
                                         </div>
 
                                         {/* Custom Material Name - Only show when Custom is selected */}
@@ -724,21 +909,35 @@ ${inputs.quantity},${results.overallSellingPrice.toFixed(2)},${(inputs.setupCost
                                             </div>
                                         )}
 
-                                        {/* Material Cost */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Material Cost (₹/kg)
-                                                <InfoTooltip text="Cost of the material per kilogram" />
-                                            </label>
+                                        {/* Material Cost with Override Option */}
+                                        <div className="col-span-2">
+                                            <div className="flex items-center mb-2">
+                                                <label className="block text-sm font-medium text-gray-700">
+                                                    Material Cost (₹/kg)
+                                                    <InfoTooltip text="Cost of the material per kilogram" />
+                                                </label>
+                                                <div className="ml-4 flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="overrideMaterialCost"
+                                                        checked={inputs.overrideMaterialCost}
+                                                        onChange={handleInputChange}
+                                                        className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                                    />
+                                                    <label className="ml-2 text-sm text-gray-600">
+                                                        Override default cost
+                                                    </label>
+                                                </div>
+                                            </div>
                                             <input
                                                 type="number"
                                                 name="materialCost"
                                                 value={inputs.materialCost}
                                                 onChange={handleInputChange}
                                                 className={`block w-full rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300 ${
-                                                    inputs.material !== 'Custom' ? 'bg-gray-50' : ''
+                                                    !inputs.overrideMaterialCost ? 'bg-gray-50' : ''
                                                 }`}
-                                                readOnly={inputs.material !== 'Custom'}
+                                                readOnly={!inputs.overrideMaterialCost}
                                             />
                                         </div>
 
@@ -1250,6 +1449,9 @@ Values outside these ranges may cause:
                                                     {inputs.material === 'Custom' ? 
                                                         (inputs.customMaterialName || 'Custom Material') : 
                                                         inputs.material}
+                                                    {inputs.materialRemark && (
+                                                        <span className="text-gray-500 ml-2">({inputs.materialRemark})</span>
+                                                    )}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between border-b border-gray-200 py-2">
