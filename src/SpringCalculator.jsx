@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Download, Info, Calculator, FileText, FileSpreadsheet } from 'lucide-react';
 import jsPDF from 'jspdf';
+import QuotationGenerator from './components/QuotationGenerator';
 
 // Material properties
 const MATERIALS = {
@@ -1706,6 +1707,14 @@ Values outside these ranges may cause:
                     </div>
                 </div>
             </div>
+
+            {/* Add Quotation Generator after the Results section */}
+            {results.springRate > 0 && (
+                <QuotationGenerator 
+                    springData={inputs} 
+                    results={results}
+                />
+            )}
         </div>
     );
 };
