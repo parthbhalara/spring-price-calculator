@@ -9,6 +9,9 @@ const MATERIALS = {
     'IS 4454 Part 1 - Cold drawn unalloyed steel': { 
         density: 7.85, 
         G: 80000, 
+        E: 207000,
+        UTS: 1750,
+        yieldStrength: 1400,
         cost: 320, 
         notes: 'Grade 1/2/3, Cold drawn unalloyed steel wire',
         grade: 'Grade 1/2/3'
@@ -16,6 +19,9 @@ const MATERIALS = {
     'IS 4454 Part 2 - Oil hardened and tempered': { 
         density: 7.85, 
         G: 80000, 
+        E: 207000,
+        UTS: 2000,
+        yieldStrength: 1600,
         cost: 350, 
         notes: 'Class I/II, Oil hardened and tempered steel wire',
         grade: 'Class I/II'
@@ -23,6 +29,9 @@ const MATERIALS = {
     'IS 4454 Part 3 - Stainless steel': { 
         density: 7.95, 
         G: 70000, 
+        E: 193000,
+        UTS: 1700,
+        yieldStrength: 1360,
         cost: 550, 
         notes: 'Grade 302/304/316, Stainless steel wire for springs',
         grade: '302/304/316'
@@ -30,6 +39,9 @@ const MATERIALS = {
     'IS 4454 Part 4 - Patented and cold drawn': { 
         density: 7.85, 
         G: 80000, 
+        E: 207000,
+        UTS: 1850,
+        yieldStrength: 1480,
         cost: 380, 
         notes: 'Class I/II, Patented and cold drawn unalloyed steel',
         grade: 'Class I/II'
@@ -174,7 +186,14 @@ const initialResults = {
     pricePerSpring: 0,
     overallSellingPrice: 0,
     totalWireWeight: 0,
-    springIndex: 0
+    springIndex: 0,
+    solidLength: 0,
+    pitch: 0,
+    wahlFactor: 0,
+    shearStress: 0,
+    stressAtSolidLength: 0,
+    stressRatio: 0,
+    elasticModulus: 0
 };
 
 const SpringCalculator = () => {
@@ -292,6 +311,12 @@ const SpringCalculator = () => {
         
         // Spring index
         const C = meanD / wireD;
+
+        // Calculate solid length (Ls = nt * d)
+        const solidLength = coilsTotal * wireD;
+        
+        // Calculate pitch (p = (Lf-d)/(nt-1))
+        const pitch = (freeLength - wireD) / (coilsTotal - 1);
         
         // Wahl correction factor
         const K = (4*C-1)/(4*C-4) + 0.615/C;
@@ -315,6 +340,22 @@ const SpringCalculator = () => {
         // Load at L1
         const deflection = freeLength - loadHeight;
         const loadAtL1 = springRate * deflection;
+
+        // Calculate shear stress (τ = 8FDKw/πd³)
+        const shearStress = (8 * loadAtL1 * meanD * K) / (Math.PI * Math.pow(wireD, 3));
+
+        // Calculate stress at solid length (maximum load condition)
+        const solidLengthDeflection = freeLength - solidLength;
+        const maxLoad = springRate * solidLengthDeflection;
+        const stressAtSolidLength = (8 * maxLoad * meanD * K) / (Math.PI * Math.pow(wireD, 3));
+
+        // Get material properties
+        const materialProps = MATERIALS[inputs.material];
+        const elasticModulus = materialProps.E;
+        const UTS = materialProps.UTS;
+
+        // Calculate stress ratio
+        const stressRatio = stressAtSolidLength / UTS;
         
         // Calculate price per spring
         let pricePerSpring;
@@ -344,7 +385,14 @@ const SpringCalculator = () => {
             sellingPrice: pricePerSpring,
             pricePerSpring,
             overallSellingPrice,
-            totalWireWeight
+            totalWireWeight,
+            solidLength,
+            pitch,
+            wahlFactor: K,
+            shearStress,
+            stressAtSolidLength,
+            stressRatio,
+            elasticModulus
         });
         
         // Generate graph data for load vs deflection
@@ -1268,6 +1316,16 @@ Values outside these ranges may cause:
                                     </div>
 
                                     <div className="bg-gray-50 rounded-lg p-4">
+                                        <p className="text-sm font-medium text-gray-500">Solid Length</p>
+                                        <p className="text-xl md:text-2xl font-bold text-gray-900">{results.solidLength?.toFixed(2)} <span className="text-sm font-normal text-gray-500">mm</span></p>
+                                    </div>
+
+                                    <div className="bg-gray-50 rounded-lg p-4">
+                                        <p className="text-sm font-medium text-gray-500">Pitch</p>
+                                        <p className="text-xl md:text-2xl font-bold text-gray-900">{results.pitch?.toFixed(2)} <span className="text-sm font-normal text-gray-500">mm</span></p>
+                                    </div>
+
+                                    <div className="bg-gray-50 rounded-lg p-4">
                                         <p className="text-sm font-medium text-gray-500">Wire Volume</p>
                                         <p className="text-xl md:text-2xl font-bold text-gray-900">{results.wireVolume.toFixed(2)} <span className="text-sm font-normal text-gray-500">mm³</span></p>
                                     </div>
@@ -1306,6 +1364,33 @@ Values outside these ranges may cause:
                                         <p className="text-sm font-medium text-gray-500">Total Wire Weight</p>
                                         <p className="text-xl md:text-2xl font-bold text-gray-900">{results.totalWireWeight.toFixed(2)} <span className="text-sm font-normal text-gray-500">kg</span></p>
                                         <p className="text-xs text-gray-500 mt-1">For {inputs.quantity.toLocaleString()} springs</p>
+                                    </div>
+
+                                    {/* Add Mechanical Properties Section in Results */}
+                                    <div className="col-span-2 bg-gray-50 rounded-lg p-4">
+                                        <h3 className="text-base font-medium text-gray-900 mb-3">Mechanical Properties</h3>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Elastic Modulus (E)</p>
+                                                <p className="text-lg font-bold text-gray-900">{results.elasticModulus} <span className="text-sm font-normal text-gray-500">MPa</span></p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Wahl Factor (Kw)</p>
+                                                <p className="text-lg font-bold text-gray-900">{results.wahlFactor?.toFixed(3)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Shear Stress (τ)</p>
+                                                <p className="text-lg font-bold text-gray-900">{results.shearStress?.toFixed(2)} <span className="text-sm font-normal text-gray-500">MPa</span></p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Stress at Solid Length</p>
+                                                <p className="text-lg font-bold text-gray-900">{results.stressAtSolidLength?.toFixed(2)} <span className="text-sm font-normal text-gray-500">MPa</span></p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Stress Ratio</p>
+                                                <p className="text-lg font-bold text-gray-900">{(results.stressRatio * 100)?.toFixed(1)}%</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1472,6 +1557,14 @@ Values outside these ranges may cause:
                                                     <span className="text-gray-900">{inputs.otherNotes}</span>
                                                 </div>
                                             )}
+                                            <div className="flex justify-between border-b border-gray-200 py-2">
+                                                <span className="text-gray-600">Solid Length:</span>
+                                                <span className="text-gray-900">{results.solidLength?.toFixed(2)} mm</span>
+                                            </div>
+                                            <div className="flex justify-between border-b border-gray-200 py-2">
+                                                <span className="text-gray-600">Pitch:</span>
+                                                <span className="text-gray-900">{results.pitch?.toFixed(2)} mm</span>
+                                            </div>
                                         </div>
                                     </div>
 
